@@ -5,5 +5,6 @@ func getUserByID(userID string) User {
 	if user, ok := Data[userID]; ok {
 		return user
 	}
+
 	return user
 }

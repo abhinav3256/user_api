@@ -8,11 +8,12 @@ import (
 )
 
 type User struct {
-	Name   string `json:"name"`
-	Email  string `json:"email"`
-	Phone  string `json:"phone"`
-	UserID string `json:"user_id"`
-	City   string `json:"city"`
+	Name     string `json:"name"`
+	Email    string `json:"email"`
+	Phone    string `json:"phone"`
+	UserID   string `json:"user_id"`
+	City     string `json:"city"`
+	Password string `json:"password" binding:"required"`
 }
 
 var Data map[string]User
@@ -43,7 +44,9 @@ func GetUserByUserID(c *gin.Context) {
 		c.JSON(http.StatusOK, res)
 		return
 	}
-	user := getUserByID(userID)
+	var user User
+	user = getUserByID(userID)
+
 	res := gin.H{
 		"user": user,
 	}
@@ -64,7 +67,7 @@ func CreateUser(c *gin.Context) {
 	err := c.Bind(&reqBody)
 	if err != nil {
 		res := gin.H{
-			"error": err,
+			"error": "password is required",
 		}
 		c.JSON(http.StatusBadRequest, res)
 		return
@@ -126,25 +129,29 @@ func UpdateUser(c *gin.Context) {
 	err := c.Bind(&reqBody)
 	if err != nil {
 		res := gin.H{
-			"error": err,
+			"error": "user id is required",
 		}
 		c.JSON(http.StatusBadRequest, res)
 		return
 	}
-	if reqBody.UserID == "" {
-		res := gin.H{
-			"error": "UserId must not be empty",
-		}
-		c.JSON(http.StatusBadRequest, res)
-		return
-	}
+
 	if reqBody.UserID != userID {
 		res := gin.H{
-			"error": "UserId cannot be updated",
+			"error": "Invalid UserID",
 		}
 		c.JSON(http.StatusBadRequest, res)
 		return
 	}
+	password := c.GetHeader("password")
+	if !checkPassword(userID, password) {
+		res := gin.H{
+			"success": false,
+			"message": "Incorrect password",
+		}
+		c.JSON(http.StatusBadRequest, res)
+		return
+	}
+
 	Data[userID] = reqBody
 	res := gin.H{
 		"success": true,
@@ -163,16 +170,14 @@ func deleteUser(c *gin.Context) {
 		res := gin.H{
 			"error": "user_id is missing",
 		}
-		c.JSON(http.StatusOK, res)
+		c.JSON(http.StatusBadRequest, res)
 		return
 	}
 
-	reqBody := User{}
-
-	err := c.Bind(&reqBody)
-	if err != nil {
+	password := c.GetHeader("password")
+	if !checkPassword(userID, password) {
 		res := gin.H{
-			"error": err,
+			"success": false,
 		}
 		c.JSON(http.StatusBadRequest, res)
 		return
