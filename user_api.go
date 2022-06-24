@@ -29,7 +29,7 @@ func setupRoutes(r *gin.Engine) {
 	r.GET("/user/:user_id", GetUserByUserID)
 	r.GET("/user", GetAllUser)
 	r.POST("/user", CreateUser)
-	r.PUT("/user/:user_id", UpdateUser)
+	r.PUT("/user/:user_id", MyMiddleware(), UpdateUser)
 	r.DELETE("/user/:user_id", deleteUser)
 }
 
@@ -108,6 +108,7 @@ func CreateUser(c *gin.Context) {
 
 //Update User PUT
 func UpdateUser(c *gin.Context) {
+
 	userID, ok := c.Params.Get("user_id")
 	if ok == false {
 		res := gin.H{
@@ -135,15 +136,15 @@ func UpdateUser(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, res)
 		return
 	}
-	password := c.GetHeader("password")
-	if !checkPassword(userID, password) {
-		res := gin.H{
-			"success": false,
-			"message": "Incorrect password",
-		}
-		c.JSON(http.StatusBadRequest, res)
-		return
-	}
+	//password := c.GetHeader("password")
+	// if !checkPassword(userID, password) {
+	// 	res := gin.H{
+	// 		"success": false,
+	// 		"message": "Incorrect password",
+	// 	}
+	// 	c.JSON(http.StatusBadRequest, res)
+	// 	return
+	// }
 
 	Data[userID] = reqBody
 	res := gin.H{
@@ -183,4 +184,25 @@ func deleteUser(c *gin.Context) {
 	}
 	c.JSON(http.StatusOK, res)
 	return
+}
+
+func MyMiddleware() gin.HandlerFunc {
+	return func(c *gin.Context) {
+		// middleware
+
+		userID, _ := c.Params.Get("user_id")
+		password := c.GetHeader("password")
+		if _, ok := Data[userID]; ok {
+
+			if password != Data[userID].Password {
+				res := gin.H{
+					"success": false,
+					"message": "Incorrect password",
+				}
+				c.JSON(http.StatusBadRequest, res)
+				c.Abort()
+			}
+		}
+		c.Next()
+	}
 }
