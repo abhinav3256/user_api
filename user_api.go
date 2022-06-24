@@ -67,14 +67,7 @@ func CreateUser(c *gin.Context) {
 	err := c.Bind(&reqBody)
 	if err != nil {
 		res := gin.H{
-			"error": "password is required",
-		}
-		c.JSON(http.StatusBadRequest, res)
-		return
-	}
-	if reqBody.UserID == "" {
-		res := gin.H{
-			"error": "UserId must not be empty",
+			"error": err,
 		}
 		c.JSON(http.StatusBadRequest, res)
 		return
